@@ -24,10 +24,27 @@
       type="pattern"
       url="marker.patt"
     >
-      <a-box
-        position="0 0.5 0"
-        color="red"
-      ></a-box>
+      <a-entity
+  position="0 0.05 0"
+  rotation="0 0 0"
+>
+  <a-box
+    position="-0.15 0 0"
+    width="0.7"
+    height="0.04"
+    depth="0.16"
+    color="#EC4E14"
+  ></a-box>
+
+  <a-triangle
+    position="0.35 0.01 0"
+    rotation="-90 0 0"
+    vertex-a="-0.2 0.3 0"
+    vertex-b="-0.2 -0.3 0"
+    vertex-c="0.3 0 0"
+    color="#EC4E14"
+  ></a-triangle>
+</a-entity>
     </a-marker>
 
     <a-entity camera></a-entity>
