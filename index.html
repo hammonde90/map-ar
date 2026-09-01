@@ -59,23 +59,19 @@
 
         const rotationDifference = rotationA.angleTo(rotationB);
 
-        const horizontalCorrect =
-          Math.abs(relativePosition.x - 0.10) < 0.25;
+        const horizontalClose =
+  Math.abs(relativePosition.x - 0.10) < 0.65;
 
-        const verticalCorrect =
-          Math.abs(relativePosition.y + 1.05) < 0.30;
+const bodyIsBelow =
+  relativePosition.y < -0.25;
 
-        const depthCorrect =
-          Math.abs(relativePosition.z) < 0.35;
+const bodyIsNear =
+  relativePosition.y > -1.85;
 
-        const rotationCorrect =
-          rotationDifference < THREE.MathUtils.degToRad(20);
-
-        const correctlyAligned =
-          horizontalCorrect &&
-          verticalCorrect &&
-          depthCorrect &&
-          rotationCorrect;
+const correctlyAligned =
+  horizontalClose &&
+  bodyIsBelow &&
+  bodyIsNear;
 
         this.arrow.setAttribute("visible", correctlyAligned);
       }
