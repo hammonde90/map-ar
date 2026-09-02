@@ -28,22 +28,28 @@
       <!-- Arrow pointing straight ahead -->
       <a-entity position="0 -0.05 0.05">
 
-        <!-- Arrow shaft -->
-        <a-plane
-          color="#00c853"
-          width="0.12"
-          height="0.30"
-          position="0 -0.10 0"
-        ></a-plane>
+       <!-- 3D arrow pointing away from the user -->
+<a-entity
+  position="0 -0.08 0.08"
+  rotation="-65 0 0"
+>
 
-        <!-- Arrow head -->
-        <a-triangle
-          color="#00c853"
-          vertex-a="0 0.20 0"
-          vertex-b="-0.18 -0.08 0"
-          vertex-c="0.18 -0.08 0"
-          position="0 0.10 0"
-        ></a-triangle>
+  <!-- Arrow shaft -->
+  <a-cylinder
+    color="#00c853"
+    radius="0.055"
+    height="0.32"
+    position="0 0 0"
+  ></a-cylinder>
+
+  <!-- Arrow head -->
+  <a-cone
+    color="#00c853"
+    radius-bottom="0.15"
+    radius-top="0"
+    height="0.22"
+    position="0 0.27 0"
+  ></a-cone>
 
       </a-entity>
 
