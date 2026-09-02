@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="ja">
 <head>
   <meta charset="UTF-8">
 
@@ -11,9 +11,122 @@
   <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
 
   <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      font-family: sans-serif;
+    }
+
+    #navigation-guide {
+      position: fixed;
+      left: 50%;
+      bottom: 10%;
+      transform: translateX(-50%);
+      z-index: 9999;
+
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.25s ease;
+
+      pointer-events: none;
+    }
+
+    #navigation-guide.visible {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    #distance-text {
+      margin-bottom: 8px;
+      padding: 7px 18px;
+
+      color: white;
+      background: rgba(0, 0, 0, 0.75);
+
+      border-radius: 20px;
+      font-size: 24px;
+      font-weight: bold;
+      white-space: nowrap;
+    }
+
+    #forward-arrow {
+      width: 125px;
+      height: 165px;
+
+      filter:
+        drop-shadow(0 4px 2px rgba(0, 0, 0, 0.7))
+        drop-shadow(0 0 5px white);
+
+      transform:
+        perspective(300px)
+        rotateX(35deg);
+    }
+  </style>
+
+  <script>
+    AFRAME.registerComponent("guide-trigger", {
+      init: function () {
+        const guide =
+          document.querySelector("#navigation-guide");
+
+        let hideTimer;
+
+        this.el.addEventListener("targetFound", () => {
+          clearTimeout(hideTimer);
+          guide.classList.add("visible");
+        });
+
+        this.el.addEventListener("targetLost", () => {
+          clearTimeout(hideTimer);
+
+          hideTimer = setTimeout(() => {
+            guide.classList.remove("visible");
+          }, 1000);
+        });
+      }
+    });
+  </script>
 </head>
 
-<body style="margin: 0; overflow: hidden;">
+<body>
+
+  <!-- Fixed navigation display -->
+  <div id="navigation-guide">
+
+    <div id="distance-text">
+      200m先
+    </div>
+
+    <svg
+      id="forward-arrow"
+      viewBox="0 0 200 260"
+      aria-hidden="true"
+    >
+      <path
+        d="
+          M100 0
+          L190 115
+          L140 115
+          L140 255
+          L60 255
+          L60 115
+          L10 115
+          Z
+        "
+        fill="#00c853"
+        stroke="white"
+        stroke-width="8"
+        stroke-linejoin="round"
+      />
+    </svg>
+
+  </div>
 
   <a-scene
     mindar-image="imageTargetSrc: test-cropped.mind; maxTrack: 1;"
@@ -23,37 +136,11 @@
     device-orientation-permission-ui="enabled: false"
   >
 
-    <a-entity mindar-image-target="targetIndex: 0">
-
-      <!-- Arrow pointing straight ahead -->
-      <a-entity position="0 -0.05 0.05">
-
-       <!-- 3D arrow pointing away from the user -->
-<a-entity
-  position="0 -0.08 0.08"
-  rotation="-65 0 0"
->
-
-  <!-- Arrow shaft -->
-  <a-cylinder
-    color="#00c853"
-    radius="0.055"
-    height="0.32"
-    position="0 0 0"
-  ></a-cylinder>
-
-  <!-- Arrow head -->
-  <a-cone
-    color="#00c853"
-    radius-bottom="0.15"
-    radius-top="0"
-    height="0.22"
-    position="0 0.27 0"
-  ></a-cone>
-
-      </a-entity>
-
-    </a-entity>
+    <!-- Recognized scenery -->
+    <a-entity
+      guide-trigger
+      mindar-image-target="targetIndex: 0"
+    ></a-entity>
 
     <a-camera
       position="0 0 0"
