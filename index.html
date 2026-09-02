@@ -11,131 +11,42 @@
   <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
 
   <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
-
-  <script>
-    AFRAME.registerComponent("alignment-check", {
-      init: function () {
-        this.targetA = document.querySelector("#target-a");
-        this.targetB = document.querySelector("#target-b");
-        this.arrow = document.querySelector("#complete-arrow");
-
-        this.aVisible = false;
-        this.bVisible = false;
-
-        this.targetA.addEventListener("targetFound", () => {
-          this.aVisible = true;
-        });
-
-        this.targetA.addEventListener("targetLost", () => {
-          this.aVisible = false;
-        });
-
-        this.targetB.addEventListener("targetFound", () => {
-          this.bVisible = true;
-        });
-
-        this.targetB.addEventListener("targetLost", () => {
-          this.bVisible = false;
-        });
-      },
-
-      tick: function () {
-        if (!this.aVisible || !this.bVisible) {
-          this.arrow.setAttribute("visible", false);
-          return;
-        }
-
-        const positionB = new THREE.Vector3();
-        const rotationA = new THREE.Quaternion();
-        const rotationB = new THREE.Quaternion();
-
-        this.targetB.object3D.getWorldPosition(positionB);
-
-        const relativePosition =
-          this.targetA.object3D.worldToLocal(positionB.clone());
-
-        this.targetA.object3D.getWorldQuaternion(rotationA);
-        this.targetB.object3D.getWorldQuaternion(rotationB);
-
-        const rotationDifference = rotationA.angleTo(rotationB);
-
-        const horizontalClose =
-  Math.abs(relativePosition.x - 0.10) < 0.65;
-
-const bodyIsBelow =
-  relativePosition.y < -0.25;
-
-const bodyIsNear =
-  relativePosition.y > -1.85;
-
-const correctlyAligned =
-  horizontalClose &&
-  bodyIsBelow &&
-  bodyIsNear;
-
-        this.arrow.setAttribute("visible", correctlyAligned);
-      }
-    });
-  </script>
 </head>
 
 <body style="margin: 0; overflow: hidden;">
 
   <a-scene
-    alignment-check
-    mindar-image="imageTargetSrc: test-cropped.mind; maxTrack: 2;"
+    mindar-image="imageTargetSrc: test-cropped.mind; maxTrack: 1;"
     color-space="sRGB"
     renderer="colorManagement: true;"
     vr-mode-ui="enabled: false"
     device-orientation-permission-ui="enabled: false"
   >
 
-    <!-- A: head -->
-    <a-entity
-      id="target-a"
-      mindar-image-target="targetIndex: 0"
-    >
-      <a-plane
-        color="red"
-        width="0.25"
-        height="0.25"
-        position="0 0 0.02"
-      ></a-plane>
+    <a-entity mindar-image-target="targetIndex: 0">
 
-      <!-- Complete arrow, initially hidden -->
-      <a-entity
-        id="complete-arrow"
-        visible="false"
-        position="0 -1.7 0.05"
-      >
+      <!-- Arrow pointing straight ahead -->
+      <a-entity position="0 -0.05 0.05">
+
+        <!-- Arrow shaft -->
         <a-plane
           color="#00c853"
-          width="0.75"
-          height="0.18"
-          position="-0.15 0 0"
+          width="0.12"
+          height="0.30"
+          position="0 -0.10 0"
         ></a-plane>
 
+        <!-- Arrow head -->
         <a-triangle
           color="#00c853"
-          vertex-a="0.15 0.32 0"
-          vertex-b="0.15 -0.32 0"
-          vertex-c="0.55 0 0"
-          position="0.25 0 0"
+          vertex-a="0 0.20 0"
+          vertex-b="-0.18 -0.08 0"
+          vertex-c="0.18 -0.08 0"
+          position="0 0.10 0"
         ></a-triangle>
-      </a-entity>
-    </a-entity>
 
-    <!-- B: body -->
-    <a-entity
-      id="target-b"
-      mindar-image-target="targetIndex: 1"
-    >
-      <a-plane
-        color="blue"
-        width="0.25"
-        height="0.25"
-        position="0 0 0.02"
-      ></a-plane>
+      </a-entity>
+
     </a-entity>
 
     <a-camera
