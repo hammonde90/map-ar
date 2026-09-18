@@ -19,7 +19,7 @@
       font-family: sans-serif;
     }
 
-    /* Destination image in the upper-right corner */
+    /* Destination image */
     #destination-panel {
       position: fixed;
       top: max(15px, env(safe-area-inset-top));
@@ -36,6 +36,9 @@
 
       text-align: center;
       pointer-events: none;
+
+      box-shadow:
+        0 5px 14px rgba(0, 0, 0, 0.55);
     }
 
     #destination-label {
@@ -52,13 +55,14 @@
       border-radius: 5px;
     }
 
-    /* Arrow and distance */
+    /* Navigation guide */
     #navigation-guide {
       position: fixed;
       left: 50%;
+
       bottom: max(
-        8vh,
-        calc(env(safe-area-inset-bottom) + 25px)
+        7vh,
+        calc(env(safe-area-inset-bottom) + 20px)
       );
 
       transform: translateX(-50%);
@@ -81,38 +85,43 @@
     }
 
     #distance-text {
-      margin-bottom: 6px;
-      padding: 7px 18px;
+      margin-bottom: 2px;
+      padding: 8px 20px;
 
       color: white;
-      background: rgba(0, 0, 0, 0.8);
+      background:
+        linear-gradient(
+          180deg,
+          rgba(45, 45, 45, 0.95),
+          rgba(0, 0, 0, 0.88)
+        );
 
-      border-radius: 20px;
+      border: 2px solid rgba(255, 255, 255, 0.9);
+      border-radius: 22px;
+
       font-size: clamp(18px, 5vw, 24px);
       font-weight: bold;
       white-space: nowrap;
+
+      box-shadow:
+        0 5px 10px rgba(0, 0, 0, 0.55);
     }
 
     #arrow-svg {
-      width: clamp(80px, 22vw, 110px);
+      width: clamp(105px, 28vw, 145px);
       height: auto;
-
-      filter:
-        drop-shadow(0 4px 2px rgba(0, 0, 0, 0.7))
-        drop-shadow(0 0 5px white);
-
-      transition: transform 0.3s ease;
+      overflow: visible;
     }
 
-    #arrow-svg.straight {
-      transform: rotate(0deg);
+    .arrow-shape {
+      display: none;
     }
 
-    #arrow-svg.right {
-      transform: rotate(90deg);
+    .arrow-shape.active {
+      display: block;
     }
 
-    /* Recognition confirmation */
+    /* Recognition message */
     #recognition-message {
       position: fixed;
       left: 50%;
@@ -183,8 +192,11 @@
         const distanceText =
           document.querySelector("#distance-text");
 
-        const arrowSvg =
-          document.querySelector("#arrow-svg");
+        const straightArrow =
+          document.querySelector("#straight-arrow");
+
+        const rightArrow =
+          document.querySelector("#right-arrow");
 
         const recognitionMessage =
           document.querySelector("#recognition-message");
@@ -216,15 +228,15 @@
 
         const updateDestinationImage = () => {
           if (stage === 0) {
-            destinationImage.src = "destination1.webp?v=4";
+            destinationImage.src = "destination1.webp?v=5";
           }
 
           if (stage === 1) {
-            destinationImage.src = "destination2.webp?v=4";
+            destinationImage.src = "destination2.webp?v=5";
           }
 
           if (stage === 2) {
-            destinationImage.src = "destination3.webp?v=4";
+            destinationImage.src = "destination3.webp?v=5";
           }
 
           if (stage >= 3) {
@@ -243,16 +255,20 @@
 
           distanceText.textContent = text;
 
-          arrowSvg.classList.remove("straight", "right");
-          arrowSvg.classList.add(direction);
+          straightArrow.classList.remove("active");
+          rightArrow.classList.remove("active");
+
+          if (direction === "straight") {
+            straightArrow.classList.add("active");
+          }
+
+          if (direction === "right") {
+            rightArrow.classList.add("active");
+          }
 
           activeArrowTarget = targetIndex;
           navigationGuide.classList.add("visible");
 
-          /*
-            The arrow automatically disappears after six seconds.
-            The destination image remains visible.
-          */
           arrowTimer = setTimeout(() => {
             hideArrow();
           }, 6000);
@@ -313,10 +329,6 @@
           clearTimeout(recognitionTimer);
           pendingTarget = targetIndex;
 
-          /*
-            The image must remain recognized for 0.8 seconds.
-            This reduces accidental activations.
-          */
           recognitionTimer = setTimeout(() => {
             completeCheckpoint(targetIndex);
           }, 800);
@@ -357,9 +369,10 @@
 
   <div id="destination-panel">
     <div id="destination-label">次の目的地</div>
+
     <img
       id="destination-image"
-      src="destination1.webp?v=4"
+      src="destination1.webp?v=5"
       alt="次の目的地"
     >
   </div>
@@ -370,26 +383,170 @@
 
     <svg
       id="arrow-svg"
-      class="straight"
-      viewBox="0 0 200 260"
+      viewBox="0 0 240 260"
       aria-hidden="true"
     >
-      <path
-        d="
-          M100 0
-          L190 115
-          L140 115
-          L140 255
-          L60 255
-          L60 115
-          L10 115
-          Z
-        "
-        fill="#00c853"
-        stroke="white"
-        stroke-width="8"
-        stroke-linejoin="round"
-      />
+      <defs>
+        <linearGradient
+          id="arrow-gradient"
+          x1="0"
+          y1="0"
+          x2="1"
+          y2="1"
+        >
+          <stop offset="0%" stop-color="#74f59a"/>
+          <stop offset="45%" stop-color="#00c853"/>
+          <stop offset="100%" stop-color="#008b39"/>
+        </linearGradient>
+
+        <filter
+          id="arrow-shadow"
+          x="-40%"
+          y="-40%"
+          width="180%"
+          height="190%"
+        >
+          <feDropShadow
+            dx="0"
+            dy="8"
+            stdDeviation="5"
+            flood-color="#000000"
+            flood-opacity="0.75"
+          />
+        </filter>
+      </defs>
+
+      <!-- Straight arrow -->
+      <g
+        id="straight-arrow"
+        class="arrow-shape active"
+        filter="url(#arrow-shadow)"
+      >
+        <!-- Dark lower edge -->
+        <path
+          d="
+            M120 12
+            L220 115
+            L165 115
+            L165 240
+            L75 240
+            L75 115
+            L20 115
+            Z
+          "
+          fill="#006b31"
+          transform="translate(0 9)"
+          stroke="white"
+          stroke-width="8"
+          stroke-linejoin="round"
+        />
+
+        <!-- Main surface -->
+        <path
+          d="
+            M120 12
+            L220 115
+            L165 115
+            L165 240
+            L75 240
+            L75 115
+            L20 115
+            Z
+          "
+          fill="url(#arrow-gradient)"
+          stroke="white"
+          stroke-width="8"
+          stroke-linejoin="round"
+        />
+
+        <!-- Highlight -->
+        <path
+          d="M120 30 L193 105"
+          fill="none"
+          stroke="rgba(255,255,255,0.48)"
+          stroke-width="8"
+          stroke-linecap="round"
+        />
+      </g>
+
+      <!-- Right-turn arrow -->
+      <g
+        id="right-arrow"
+        class="arrow-shape"
+        filter="url(#arrow-shadow)"
+      >
+        <!-- Dark lower edge -->
+        <path
+          d="
+            M48 235
+            L48 155
+            Q48 70 135 70
+            L177 70
+          "
+          fill="none"
+          stroke="#006b31"
+          stroke-width="58"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          transform="translate(0 9)"
+        />
+
+        <path
+          d="
+            M165 15
+            L230 70
+            L165 125
+            Z
+          "
+          fill="#006b31"
+          transform="translate(0 9)"
+          stroke="white"
+          stroke-width="8"
+          stroke-linejoin="round"
+        />
+
+        <!-- Main curved surface -->
+        <path
+          d="
+            M48 235
+            L48 155
+            Q48 70 135 70
+            L177 70
+          "
+          fill="none"
+          stroke="url(#arrow-gradient)"
+          stroke-width="58"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+
+        <!-- Arrow head -->
+        <path
+          d="
+            M165 15
+            L230 70
+            L165 125
+            Z
+          "
+          fill="url(#arrow-gradient)"
+          stroke="white"
+          stroke-width="8"
+          stroke-linejoin="round"
+        />
+
+        <!-- Inner highlight -->
+        <path
+          d="
+            M36 214
+            L36 154
+            Q36 58 135 58
+          "
+          fill="none"
+          stroke="rgba(255,255,255,0.45)"
+          stroke-width="7"
+          stroke-linecap="round"
+        />
+      </g>
     </svg>
 
   </div>
@@ -404,7 +561,7 @@
 
   <a-scene
     route-controller
-    mindar-image="imageTargetSrc: hino-route.mind?v=4; maxTrack: 1;"
+    mindar-image="imageTargetSrc: hino-route.mind?v=5; maxTrack: 1;"
     color-space="sRGB"
     renderer="colorManagement: true;"
     vr-mode-ui="enabled: false"
