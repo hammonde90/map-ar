@@ -19,26 +19,54 @@
       font-family: sans-serif;
     }
 
-    #message {
+    /* Destination image in the upper-right corner */
+    #destination-panel {
+      position: fixed;
+      top: max(15px, env(safe-area-inset-top));
+      right: 15px;
+      z-index: 9999;
+
+      width: clamp(105px, 29vw, 145px);
+      padding: 6px;
+
+      color: white;
+      background: rgba(0, 0, 0, 0.78);
+      border: 2px solid white;
+      border-radius: 10px;
+
+      text-align: center;
+      pointer-events: none;
+    }
+
+    #destination-label {
+      margin-bottom: 5px;
+      font-size: clamp(12px, 3.2vw, 15px);
+      font-weight: bold;
+    }
+
+    #destination-image {
+      display: block;
+      width: 100%;
+      max-height: 190px;
+      object-fit: cover;
+      border-radius: 5px;
+    }
+
+    /* Arrow and distance */
+    #navigation-guide {
       position: fixed;
       left: 50%;
       bottom: max(
-        10vh,
-        calc(env(safe-area-inset-bottom) + 30px)
+        8vh,
+        calc(env(safe-area-inset-bottom) + 25px)
       );
 
       transform: translateX(-50%);
       z-index: 9999;
 
-      padding: 12px 22px;
-      border-radius: 24px;
-
-      color: white;
-      background: rgba(0, 0, 0, 0.8);
-
-      font-size: clamp(17px, 4.5vw, 22px);
-      font-weight: bold;
-      white-space: nowrap;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
 
       opacity: 0;
       visibility: hidden;
@@ -47,42 +75,279 @@
       pointer-events: none;
     }
 
-    #message.visible {
+    #navigation-guide.visible {
       opacity: 1;
       visibility: visible;
+    }
+
+    #distance-text {
+      margin-bottom: 6px;
+      padding: 7px 18px;
+
+      color: white;
+      background: rgba(0, 0, 0, 0.8);
+
+      border-radius: 20px;
+      font-size: clamp(18px, 5vw, 24px);
+      font-weight: bold;
+      white-space: nowrap;
+    }
+
+    #arrow-svg {
+      width: clamp(80px, 22vw, 110px);
+      height: auto;
+
+      filter:
+        drop-shadow(0 4px 2px rgba(0, 0, 0, 0.7))
+        drop-shadow(0 0 5px white);
+
+      transition: transform 0.3s ease;
+    }
+
+    #arrow-svg.straight {
+      transform: rotate(0deg);
+    }
+
+    #arrow-svg.right {
+      transform: rotate(90deg);
+    }
+
+    /* Recognition confirmation */
+    #recognition-message {
+      position: fixed;
+      left: 50%;
+      top: 45%;
+      transform: translate(-50%, -50%);
+      z-index: 10000;
+
+      padding: 12px 22px;
+      border-radius: 24px;
+
+      color: white;
+      background: rgba(0, 0, 0, 0.82);
+
+      font-size: clamp(17px, 4.5vw, 22px);
+      font-weight: bold;
+      white-space: nowrap;
+
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.2s ease;
+
+      pointer-events: none;
+    }
+
+    #recognition-message.visible {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    /* Temporary final screen */
+    #final-screen {
+      position: fixed;
+      inset: 0;
+      z-index: 11000;
+
+      display: none;
+      align-items: center;
+      justify-content: center;
+
+      padding: 30px;
+      color: white;
+      background: rgba(0, 0, 0, 0.85);
+
+      font-size: clamp(24px, 7vw, 36px);
+      font-weight: bold;
+      text-align: center;
+    }
+
+    #final-screen.visible {
+      display: flex;
     }
   </style>
 
   <script>
-    AFRAME.registerComponent("automatic-link", {
+    const FINAL_URL = "";
+
+    AFRAME.registerComponent("route-controller", {
       init: function () {
-        const message = document.querySelector("#message");
+        const destinationPanel =
+          document.querySelector("#destination-panel");
 
-        let redirectTimer = null;
-        let redirectStarted = false;
+        const destinationImage =
+          document.querySelector("#destination-image");
 
-        this.el.addEventListener("targetFound", () => {
-          if (redirectStarted) return;
+        const navigationGuide =
+          document.querySelector("#navigation-guide");
 
-          message.classList.add("visible");
+        const distanceText =
+          document.querySelector("#distance-text");
 
-          redirectTimer = setTimeout(() => {
-            redirectStarted = true;
+        const arrowSvg =
+          document.querySelector("#arrow-svg");
 
-            window.location.assign(
-              "https://fp-michinoekishiga.com/"
-            );
-          }, 1000);
+        const recognitionMessage =
+          document.querySelector("#recognition-message");
+
+        const finalScreen =
+          document.querySelector("#final-screen");
+
+        const urlParameters =
+          new URLSearchParams(window.location.search);
+
+        if (urlParameters.get("reset") === "1") {
+          localStorage.removeItem("hinoRouteStage");
+        }
+
+        let stage = Number(
+          localStorage.getItem("hinoRouteStage") || "0"
+        );
+
+        let recognitionTimer = null;
+        let arrowTimer = null;
+        let pendingTarget = null;
+        let activeArrowTarget = null;
+
+        const targets = [
+          document.querySelector("#target-1"),
+          document.querySelector("#target-2"),
+          document.querySelector("#target-3")
+        ];
+
+        const updateDestinationImage = () => {
+          if (stage === 0) {
+            destinationImage.src = "destination1.webp?v=4";
+          }
+
+          if (stage === 1) {
+            destinationImage.src = "destination2.webp?v=4";
+          }
+
+          if (stage === 2) {
+            destinationImage.src = "destination3.webp?v=4";
+          }
+
+          if (stage >= 3) {
+            destinationPanel.style.display = "none";
+          }
+        };
+
+        const hideArrow = () => {
+          navigationGuide.classList.remove("visible");
+          activeArrowTarget = null;
+          clearTimeout(arrowTimer);
+        };
+
+        const showArrow = (direction, text, targetIndex) => {
+          clearTimeout(arrowTimer);
+
+          distanceText.textContent = text;
+
+          arrowSvg.classList.remove("straight", "right");
+          arrowSvg.classList.add(direction);
+
+          activeArrowTarget = targetIndex;
+          navigationGuide.classList.add("visible");
+
+          /*
+            The arrow automatically disappears after six seconds.
+            The destination image remains visible.
+          */
+          arrowTimer = setTimeout(() => {
+            hideArrow();
+          }, 6000);
+        };
+
+        const showRecognizedMessage = () => {
+          recognitionMessage.classList.add("visible");
+
+          setTimeout(() => {
+            recognitionMessage.classList.remove("visible");
+          }, 1200);
+        };
+
+        const completeCheckpoint = (targetIndex) => {
+          pendingTarget = null;
+          showRecognizedMessage();
+
+          if (targetIndex === 0 && stage === 0) {
+            stage = 1;
+            localStorage.setItem("hinoRouteStage", "1");
+
+            updateDestinationImage();
+            showArrow("straight", "120m先", 0);
+            return;
+          }
+
+          if (targetIndex === 1 && stage === 1) {
+            stage = 2;
+            localStorage.setItem("hinoRouteStage", "2");
+
+            updateDestinationImage();
+            showArrow("right", "470m", 1);
+            return;
+          }
+
+          if (targetIndex === 2 && stage === 2) {
+            stage = 3;
+            localStorage.setItem("hinoRouteStage", "3");
+
+            hideArrow();
+            updateDestinationImage();
+
+            setTimeout(() => {
+              if (FINAL_URL) {
+                window.location.assign(FINAL_URL);
+              } else {
+                finalScreen.classList.add("visible");
+              }
+            }, 1000);
+          }
+        };
+
+        const targetFound = (targetIndex) => {
+          if (targetIndex !== stage) {
+            return;
+          }
+
+          clearTimeout(recognitionTimer);
+          pendingTarget = targetIndex;
+
+          /*
+            The image must remain recognized for 0.8 seconds.
+            This reduces accidental activations.
+          */
+          recognitionTimer = setTimeout(() => {
+            completeCheckpoint(targetIndex);
+          }, 800);
+        };
+
+        const targetLost = (targetIndex) => {
+          if (pendingTarget === targetIndex) {
+            clearTimeout(recognitionTimer);
+            pendingTarget = null;
+          }
+
+          if (activeArrowTarget === targetIndex) {
+            hideArrow();
+          }
+        };
+
+        targets.forEach((target, targetIndex) => {
+          target.addEventListener("targetFound", () => {
+            targetFound(targetIndex);
+          });
+
+          target.addEventListener("targetLost", () => {
+            targetLost(targetIndex);
+          });
         });
 
-        this.el.addEventListener("targetLost", () => {
-          if (redirectStarted) return;
+        updateDestinationImage();
 
-          clearTimeout(redirectTimer);
-          redirectTimer = null;
-
-          message.classList.remove("visible");
-        });
+        if (stage >= 3 && !FINAL_URL) {
+          finalScreen.classList.add("visible");
+        }
       }
     });
   </script>
@@ -90,12 +355,56 @@
 
 <body>
 
-  <div id="message">
-    場所を認識しました
+  <div id="destination-panel">
+    <div id="destination-label">次の目的地</div>
+    <img
+      id="destination-image"
+      src="destination1.webp?v=4"
+      alt="次の目的地"
+    >
+  </div>
+
+  <div id="navigation-guide">
+
+    <div id="distance-text"></div>
+
+    <svg
+      id="arrow-svg"
+      class="straight"
+      viewBox="0 0 200 260"
+      aria-hidden="true"
+    >
+      <path
+        d="
+          M100 0
+          L190 115
+          L140 115
+          L140 255
+          L60 255
+          L60 115
+          L10 115
+          Z
+        "
+        fill="#00c853"
+        stroke="white"
+        stroke-width="8"
+        stroke-linejoin="round"
+      />
+    </svg>
+
+  </div>
+
+  <div id="recognition-message">
+    目的地を見つけました
+  </div>
+
+  <div id="final-screen">
+    最後の目的地に到着しました
   </div>
 
   <a-scene
-    mindar-image="imageTargetSrc: test-cropped.mind?v=3; maxTrack: 1;"
+    route-controller
+    mindar-image="imageTargetSrc: hino-route.mind?v=4; maxTrack: 1;"
     color-space="sRGB"
     renderer="colorManagement: true;"
     vr-mode-ui="enabled: false"
@@ -103,8 +412,18 @@
   >
 
     <a-entity
-      automatic-link
+      id="target-1"
       mindar-image-target="targetIndex: 0"
+    ></a-entity>
+
+    <a-entity
+      id="target-2"
+      mindar-image-target="targetIndex: 1"
+    ></a-entity>
+
+    <a-entity
+      id="target-3"
+      mindar-image-target="targetIndex: 2"
     ></a-entity>
 
     <a-camera
