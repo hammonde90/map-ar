@@ -19,7 +19,6 @@
       font-family: sans-serif;
     }
 
-    /* Destination image */
     #destination-panel {
       position: fixed;
       top: max(15px, env(safe-area-inset-top));
@@ -55,7 +54,6 @@
       border-radius: 5px;
     }
 
-    /* Navigation guide */
     #navigation-guide {
       position: fixed;
       left: 50%;
@@ -85,18 +83,19 @@
     }
 
     #distance-text {
-      margin-bottom: 2px;
+      margin-bottom: 4px;
       padding: 8px 20px;
 
       color: white;
+
       background:
         linear-gradient(
           180deg,
-          rgba(45, 45, 45, 0.95),
+          rgba(50, 50, 50, 0.95),
           rgba(0, 0, 0, 0.88)
         );
 
-      border: 2px solid rgba(255, 255, 255, 0.9);
+      border: 2px solid white;
       border-radius: 22px;
 
       font-size: clamp(18px, 5vw, 24px);
@@ -108,7 +107,7 @@
     }
 
     #arrow-svg {
-      width: clamp(105px, 28vw, 145px);
+      width: clamp(115px, 30vw, 155px);
       height: auto;
       overflow: visible;
     }
@@ -121,11 +120,11 @@
       display: block;
     }
 
-    /* Recognition message */
     #recognition-message {
       position: fixed;
       left: 50%;
       top: 45%;
+
       transform: translate(-50%, -50%);
       z-index: 10000;
 
@@ -151,7 +150,6 @@
       visibility: visible;
     }
 
-    /* Temporary final screen */
     #final-screen {
       position: fixed;
       inset: 0;
@@ -162,6 +160,7 @@
       justify-content: center;
 
       padding: 30px;
+
       color: white;
       background: rgba(0, 0, 0, 0.85);
 
@@ -176,6 +175,10 @@
   </style>
 
   <script>
+    /*
+      Add the final destination URL between the quotation marks
+      when it becomes available.
+    */
     const FINAL_URL = "";
 
     AFRAME.registerComponent("route-controller", {
@@ -226,17 +229,20 @@
           document.querySelector("#target-3")
         ];
 
-        const updateDestinationImage = () => {
+        const updateDestinationImage = function () {
           if (stage === 0) {
-            destinationImage.src = "destination1.webp?v=5";
+            destinationImage.src =
+              "destination1.webp?v=7";
           }
 
           if (stage === 1) {
-            destinationImage.src = "destination2.webp?v=5";
+            destinationImage.src =
+              "destination2.webp?v=7";
           }
 
           if (stage === 2) {
-            destinationImage.src = "destination3.webp?v=5";
+            destinationImage.src =
+              "destination3.webp?v=7";
           }
 
           if (stage >= 3) {
@@ -244,13 +250,17 @@
           }
         };
 
-        const hideArrow = () => {
+        const hideArrow = function () {
           navigationGuide.classList.remove("visible");
           activeArrowTarget = null;
           clearTimeout(arrowTimer);
         };
 
-        const showArrow = (direction, text, targetIndex) => {
+        const showArrow = function (
+          direction,
+          text,
+          targetIndex
+        ) {
           clearTimeout(arrowTimer);
 
           distanceText.textContent = text;
@@ -269,49 +279,77 @@
           activeArrowTarget = targetIndex;
           navigationGuide.classList.add("visible");
 
-          arrowTimer = setTimeout(() => {
+          /*
+            The arrow disappears automatically.
+            The next destination image remains visible.
+          */
+          arrowTimer = setTimeout(function () {
             hideArrow();
           }, 6000);
         };
 
-        const showRecognizedMessage = () => {
+        const showRecognizedMessage = function () {
           recognitionMessage.classList.add("visible");
 
-          setTimeout(() => {
+          setTimeout(function () {
             recognitionMessage.classList.remove("visible");
           }, 1200);
         };
 
-        const completeCheckpoint = (targetIndex) => {
+        const completeCheckpoint = function (targetIndex) {
           pendingTarget = null;
           showRecognizedMessage();
 
           if (targetIndex === 0 && stage === 0) {
             stage = 1;
-            localStorage.setItem("hinoRouteStage", "1");
+
+            localStorage.setItem(
+              "hinoRouteStage",
+              "1"
+            );
 
             updateDestinationImage();
-            showArrow("straight", "120m先", 0);
+
+            showArrow(
+              "straight",
+              "120m先",
+              0
+            );
+
             return;
           }
 
           if (targetIndex === 1 && stage === 1) {
             stage = 2;
-            localStorage.setItem("hinoRouteStage", "2");
+
+            localStorage.setItem(
+              "hinoRouteStage",
+              "2"
+            );
 
             updateDestinationImage();
-            showArrow("right", "470m", 1);
+
+            showArrow(
+              "right",
+              "470m",
+              1
+            );
+
             return;
           }
 
           if (targetIndex === 2 && stage === 2) {
             stage = 3;
-            localStorage.setItem("hinoRouteStage", "3");
+
+            localStorage.setItem(
+              "hinoRouteStage",
+              "3"
+            );
 
             hideArrow();
             updateDestinationImage();
 
-            setTimeout(() => {
+            setTimeout(function () {
               if (FINAL_URL) {
                 window.location.assign(FINAL_URL);
               } else {
@@ -321,7 +359,7 @@
           }
         };
 
-        const targetFound = (targetIndex) => {
+        const targetFound = function (targetIndex) {
           if (targetIndex !== stage) {
             return;
           }
@@ -329,12 +367,12 @@
           clearTimeout(recognitionTimer);
           pendingTarget = targetIndex;
 
-          recognitionTimer = setTimeout(() => {
+          recognitionTimer = setTimeout(function () {
             completeCheckpoint(targetIndex);
           }, 800);
         };
 
-        const targetLost = (targetIndex) => {
+        const targetLost = function (targetIndex) {
           if (pendingTarget === targetIndex) {
             clearTimeout(recognitionTimer);
             pendingTarget = null;
@@ -345,14 +383,20 @@
           }
         };
 
-        targets.forEach((target, targetIndex) => {
-          target.addEventListener("targetFound", () => {
-            targetFound(targetIndex);
-          });
+        targets.forEach(function (target, targetIndex) {
+          target.addEventListener(
+            "targetFound",
+            function () {
+              targetFound(targetIndex);
+            }
+          );
 
-          target.addEventListener("targetLost", () => {
-            targetLost(targetIndex);
-          });
+          target.addEventListener(
+            "targetLost",
+            function () {
+              targetLost(targetIndex);
+            }
+          );
         });
 
         updateDestinationImage();
@@ -368,13 +412,17 @@
 <body>
 
   <div id="destination-panel">
-    <div id="destination-label">次の目的地</div>
+
+    <div id="destination-label">
+      次の目的地
+    </div>
 
     <img
       id="destination-image"
-      src="destination1.webp?v=5"
+      src="destination1.webp?v=7"
       alt="次の目的地"
     >
+
   </div>
 
   <div id="navigation-guide">
@@ -383,139 +431,181 @@
 
     <svg
       id="arrow-svg"
-      viewBox="0 0 240 260"
+      viewBox="0 0 280 300"
       aria-hidden="true"
     >
       <defs>
+
         <linearGradient
-          id="arrow-gradient"
+          id="gold-arrow"
           x1="0"
           y1="0"
           x2="1"
           y2="1"
         >
-          <stop offset="0%" stop-color="#74f59a"/>
-          <stop offset="45%" stop-color="#00c853"/>
-          <stop offset="100%" stop-color="#008b39"/>
+          <stop
+            offset="0%"
+            stop-color="#fff28a"
+          />
+
+          <stop
+            offset="38%"
+            stop-color="#ffc928"
+          />
+
+          <stop
+            offset="72%"
+            stop-color="#ff9900"
+          />
+
+          <stop
+            offset="100%"
+            stop-color="#e96600"
+          />
         </linearGradient>
 
         <filter
-          id="arrow-shadow"
-          x="-40%"
-          y="-40%"
-          width="180%"
-          height="190%"
+          id="deep-shadow"
+          x="-50%"
+          y="-50%"
+          width="200%"
+          height="220%"
         >
           <feDropShadow
             dx="0"
-            dy="8"
-            stdDeviation="5"
+            dy="10"
+            stdDeviation="7"
             flood-color="#000000"
             flood-opacity="0.75"
           />
         </filter>
+
       </defs>
 
-      <!-- Straight arrow -->
+      <!-- Straight-ahead arrow -->
       <g
         id="straight-arrow"
         class="arrow-shape active"
-        filter="url(#arrow-shadow)"
+        filter="url(#deep-shadow)"
       >
-        <!-- Dark lower edge -->
+
+        <!-- Thick underside -->
         <path
           d="
-            M120 12
-            L220 115
-            L165 115
-            L165 240
-            L75 240
-            L75 115
-            L20 115
+            M140 10
+            L260 130
+            L195 130
+            L195 280
+            L85 280
+            L85 130
+            L20 130
             Z
           "
-          fill="#006b31"
-          transform="translate(0 9)"
-          stroke="white"
-          stroke-width="8"
+          transform="translate(0 13)"
+          fill="#8d3f00"
+          stroke="#502400"
+          stroke-width="12"
           stroke-linejoin="round"
         />
 
         <!-- Main surface -->
         <path
           d="
-            M120 12
-            L220 115
-            L165 115
-            L165 240
-            L75 240
-            L75 115
-            L20 115
+            M140 10
+            L260 130
+            L195 130
+            L195 280
+            L85 280
+            L85 130
+            L20 130
             Z
           "
-          fill="url(#arrow-gradient)"
-          stroke="white"
-          stroke-width="8"
+          fill="url(#gold-arrow)"
+          stroke="#fff7cf"
+          stroke-width="11"
           stroke-linejoin="round"
         />
 
         <!-- Highlight -->
         <path
-          d="M120 30 L193 105"
+          d="
+            M140 31
+            L229 120
+            L177 120
+            L177 252
+          "
           fill="none"
-          stroke="rgba(255,255,255,0.48)"
-          stroke-width="8"
+          stroke="rgba(255,255,255,0.58)"
+          stroke-width="10"
           stroke-linecap="round"
+          stroke-linejoin="round"
         />
+
       </g>
 
       <!-- Right-turn arrow -->
       <g
         id="right-arrow"
         class="arrow-shape"
-        filter="url(#arrow-shadow)"
+        filter="url(#deep-shadow)"
       >
-        <!-- Dark lower edge -->
+
+        <!-- Thick underside -->
         <path
           d="
-            M48 235
-            L48 155
-            Q48 70 135 70
-            L177 70
+            M55 276
+            L55 174
+            Q55 80 150 80
+            L196 80
           "
+          transform="translate(0 13)"
           fill="none"
-          stroke="#006b31"
-          stroke-width="58"
+          stroke="#8d3f00"
+          stroke-width="82"
           stroke-linecap="round"
           stroke-linejoin="round"
-          transform="translate(0 9)"
         />
 
         <path
           d="
-            M165 15
-            L230 70
-            L165 125
+            M183 15
+            L270 80
+            L183 145
             Z
           "
-          fill="#006b31"
-          transform="translate(0 9)"
-          stroke="white"
-          stroke-width="8"
+          transform="translate(0 13)"
+          fill="#8d3f00"
+          stroke="#502400"
+          stroke-width="12"
+          stroke-linejoin="round"
+        />
+
+        <!-- Light border -->
+        <path
+          d="
+            M55 276
+            L55 174
+            Q55 80 150 80
+            L196 80
+          "
+          fill="none"
+          stroke="#fff7cf"
+          stroke-width="82"
+          stroke-linecap="round"
           stroke-linejoin="round"
         />
 
         <!-- Main curved surface -->
         <path
           d="
-            M48 235
-            L48 155
-            Q48 70 135 70
-            L177 70
+            M55 276
+            L55 174
+            Q55 80 150 80
+            L196 80
           "
           fill="none"
-          stroke="url(#arrow-gradient)"
-          stroke-width="58"
+          stroke="url(#gold-arrow)"
+          stroke-width="65"
           stroke-linecap="round"
           stroke-linejoin="round"
         />
@@ -523,29 +613,30 @@
         <!-- Arrow head -->
         <path
           d="
-            M165 15
-            L230 70
-            L165 125
+            M183 15
+            L270 80
+            L183 145
             Z
           "
-          fill="url(#arrow-gradient)"
-          stroke="white"
-          stroke-width="8"
+          fill="url(#gold-arrow)"
+          stroke="#fff7cf"
+          stroke-width="11"
           stroke-linejoin="round"
         />
 
-        <!-- Inner highlight -->
+        <!-- Highlight -->
         <path
           d="
-            M36 214
-            L36 154
-            Q36 58 135 58
+            M39 251
+            L39 169
+            Q39 62 150 62
           "
           fill="none"
-          stroke="rgba(255,255,255,0.45)"
-          stroke-width="7"
+          stroke="rgba(255,255,255,0.55)"
+          stroke-width="10"
           stroke-linecap="round"
         />
+
       </g>
     </svg>
 
@@ -561,7 +652,7 @@
 
   <a-scene
     route-controller
-    mindar-image="imageTargetSrc: hino-route.mind?v=5; maxTrack: 1;"
+    mindar-image="imageTargetSrc: hino-route.mind?v=7; maxTrack: 1;"
     color-space="sRGB"
     renderer="colorManagement: true;"
     vr-mode-ui="enabled: false"
