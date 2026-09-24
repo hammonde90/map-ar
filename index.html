@@ -258,13 +258,13 @@
           }, 30000);
         };
 
-        const showRecognizedMessage = function () {
-          recognitionMessage.classList.add("visible");
+      const showRecognizedMessage = function () {
+  recognitionMessage.classList.add("visible");
 
-          setTimeout(function () {
-            recognitionMessage.classList.remove("visible");
-          }, 1200);
-        };
+  setTimeout(function () {
+    recognitionMessage.classList.remove("visible");
+  }, 30000);
+};
 
         const completeCheckpoint = function (targetIndex) {
           pendingTarget = null;
