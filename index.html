@@ -9,7 +9,6 @@
   >
 
   <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
-
   <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
 
   <style>
@@ -24,20 +23,15 @@
       top: max(15px, env(safe-area-inset-top));
       right: 15px;
       z-index: 9999;
-
       width: clamp(105px, 29vw, 145px);
       padding: 6px;
-
       color: white;
       background: rgba(0, 0, 0, 0.78);
       border: 2px solid white;
       border-radius: 10px;
-
       text-align: center;
       pointer-events: none;
-
-      box-shadow:
-        0 5px 14px rgba(0, 0, 0, 0.55);
+      box-shadow: 0 5px 14px rgba(0, 0, 0, 0.55);
     }
 
     #destination-label {
@@ -57,23 +51,18 @@
     #navigation-guide {
       position: fixed;
       left: 50%;
-
       bottom: max(
         7vh,
         calc(env(safe-area-inset-bottom) + 20px)
       );
-
       transform: translateX(-50%);
       z-index: 9999;
-
       display: flex;
       flex-direction: column;
       align-items: center;
-
       opacity: 0;
       visibility: hidden;
       transition: opacity 0.25s ease;
-
       pointer-events: none;
     }
 
@@ -85,25 +74,19 @@
     #distance-text {
       margin-bottom: 4px;
       padding: 8px 20px;
-
       color: white;
-
       background:
         linear-gradient(
           180deg,
           rgba(50, 50, 50, 0.95),
           rgba(0, 0, 0, 0.88)
         );
-
       border: 2px solid white;
       border-radius: 22px;
-
       font-size: clamp(18px, 5vw, 24px);
       font-weight: bold;
       white-space: nowrap;
-
-      box-shadow:
-        0 5px 10px rgba(0, 0, 0, 0.55);
+      box-shadow: 0 5px 10px rgba(0, 0, 0, 0.55);
     }
 
     #arrow-svg {
@@ -124,24 +107,18 @@
       position: fixed;
       left: 50%;
       top: 45%;
-
       transform: translate(-50%, -50%);
       z-index: 10000;
-
       padding: 12px 22px;
       border-radius: 24px;
-
       color: white;
       background: rgba(0, 0, 0, 0.82);
-
       font-size: clamp(17px, 4.5vw, 22px);
       font-weight: bold;
       white-space: nowrap;
-
       opacity: 0;
       visibility: hidden;
       transition: opacity 0.2s ease;
-
       pointer-events: none;
     }
 
@@ -154,16 +131,12 @@
       position: fixed;
       inset: 0;
       z-index: 11000;
-
       display: none;
       align-items: center;
       justify-content: center;
-
       padding: 30px;
-
       color: white;
       background: rgba(0, 0, 0, 0.85);
-
       font-size: clamp(24px, 7vw, 36px);
       font-weight: bold;
       text-align: center;
@@ -232,17 +205,17 @@
         const updateDestinationImage = function () {
           if (stage === 0) {
             destinationImage.src =
-              "destination1.webp?v=7";
+              "destination1.webp?v=8";
           }
 
           if (stage === 1) {
             destinationImage.src =
-              "destination2.webp?v=7";
+              "destination2.webp?v=8";
           }
 
           if (stage === 2) {
             destinationImage.src =
-              "destination3.webp?v=7";
+              "destination3.webp?v=8";
           }
 
           if (stage >= 3) {
@@ -413,13 +386,13 @@
 
   <div id="destination-panel">
 
-<div id="destination-label">
-  この景色を神の目で見ろ
-</div>
+    <div id="destination-label">
+      この景色を神の目で見ろ
+    </div>
 
     <img
       id="destination-image"
-      src="destination1.webp?v=7"
+      src="destination1.webp?v=8"
       alt="次の目的地"
     >
 
@@ -482,11 +455,12 @@
 
       </defs>
 
-      <!-- Straight-ahead arrow -->
+      <!-- Diagonal arrow pointing up and left -->
       <g
         id="straight-arrow"
         class="arrow-shape active"
         filter="url(#deep-shadow)"
+        transform="rotate(-28 140 150)"
       >
 
         <!-- Thick underside -->
@@ -652,7 +626,7 @@
 
   <a-scene
     route-controller
-    mindar-image="imageTargetSrc: hino-route.mind?v=7; maxTrack: 1;"
+    mindar-image="imageTargetSrc: hino-route.mind?v=8; maxTrack: 1;"
     color-space="sRGB"
     renderer="colorManagement: true;"
     vr-mode-ui="enabled: false"
