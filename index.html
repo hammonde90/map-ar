@@ -194,7 +194,6 @@
         let recognitionTimer = null;
         let arrowTimer = null;
         let pendingTarget = null;
-        let activeArrowTarget = null;
 
         const targets = [
           document.querySelector("#target-1"),
@@ -205,17 +204,17 @@
         const updateDestinationImage = function () {
           if (stage === 0) {
             destinationImage.src =
-              "destination1.webp?v=8";
+              "destination1.webp?v=9";
           }
 
           if (stage === 1) {
             destinationImage.src =
-              "destination2.webp?v=8";
+              "destination2.webp?v=9";
           }
 
           if (stage === 2) {
             destinationImage.src =
-              "destination3.webp?v=8";
+              "destination3.webp?v=9";
           }
 
           if (stage >= 3) {
@@ -225,14 +224,12 @@
 
         const hideArrow = function () {
           navigationGuide.classList.remove("visible");
-          activeArrowTarget = null;
           clearTimeout(arrowTimer);
         };
 
         const showArrow = function (
           direction,
-          text,
-          targetIndex
+          text
         ) {
           clearTimeout(arrowTimer);
 
@@ -249,16 +246,16 @@
             rightArrow.classList.add("active");
           }
 
-          activeArrowTarget = targetIndex;
           navigationGuide.classList.add("visible");
 
           /*
-            The arrow disappears automatically.
-            The next destination image remains visible.
+            Keep the arrow visible for 30 seconds.
+            It will remain visible even after the camera
+            stops recognizing the destination.
           */
           arrowTimer = setTimeout(function () {
             hideArrow();
-          }, 6000);
+          }, 30000);
         };
 
         const showRecognizedMessage = function () {
@@ -285,8 +282,7 @@
 
             showArrow(
               "straight",
-              "120m先",
-              0
+              "120m先"
             );
 
             return;
@@ -304,8 +300,7 @@
 
             showArrow(
               "right",
-              "470m",
-              1
+              "470m"
             );
 
             return;
@@ -340,9 +335,13 @@
           clearTimeout(recognitionTimer);
           pendingTarget = targetIndex;
 
+          /*
+            Reduced from 800ms to 350ms
+            to improve responsiveness on Android.
+          */
           recognitionTimer = setTimeout(function () {
             completeCheckpoint(targetIndex);
-          }, 800);
+          }, 350);
         };
 
         const targetLost = function (targetIndex) {
@@ -351,9 +350,10 @@
             pendingTarget = null;
           }
 
-          if (activeArrowTarget === targetIndex) {
-            hideArrow();
-          }
+          /*
+            Do not hide the arrow here.
+            Once shown, it remains for 30 seconds.
+          */
         };
 
         targets.forEach(function (target, targetIndex) {
@@ -392,7 +392,7 @@
 
     <img
       id="destination-image"
-      src="destination1.webp?v=8"
+      src="destination1.webp?v=9"
       alt="次の目的地"
     >
 
@@ -455,12 +455,12 @@
 
       </defs>
 
-      <!-- Diagonal arrow pointing up and left -->
+      <!-- Diagonal arrow pointing farther to the left -->
       <g
         id="straight-arrow"
         class="arrow-shape active"
         filter="url(#deep-shadow)"
-        transform="rotate(-28 140 150)"
+        transform="rotate(-35 140 150)"
       >
 
         <!-- Thick underside -->
@@ -626,7 +626,7 @@
 
   <a-scene
     route-controller
-    mindar-image="imageTargetSrc: hino-route.mind?v=8; maxTrack: 1;"
+    mindar-image="imageTargetSrc: hino-route.mind?v=9; maxTrack: 1; warmupTolerance: 2; missTolerance: 10;"
     color-space="sRGB"
     renderer="colorManagement: true;"
     vr-mode-ui="enabled: false"
