@@ -62,13 +62,23 @@
       align-items: center;
       opacity: 0;
       visibility: hidden;
-      transition: opacity 0.25s ease;
+      transition:
+        opacity 0.25s ease,
+        left 0.25s ease;
       pointer-events: none;
     }
 
     #navigation-guide.visible {
       opacity: 1;
       visibility: visible;
+    }
+
+    /*
+      After destination1, place the arrow on the street
+      to the left of the post box.
+    */
+    #navigation-guide.left-route {
+      left: 27%;
     }
 
     #distance-text {
@@ -192,6 +202,7 @@
         );
 
         let recognitionTimer = null;
+        let recognitionMessageTimer = null;
         let arrowTimer = null;
         let pendingTarget = null;
 
@@ -204,17 +215,17 @@
         const updateDestinationImage = function () {
           if (stage === 0) {
             destinationImage.src =
-              "destination1.webp?v=9";
+              "destination1.webp?v=11";
           }
 
           if (stage === 1) {
             destinationImage.src =
-              "destination2.webp?v=9";
+              "destination2.webp?v=11";
           }
 
           if (stage === 2) {
             destinationImage.src =
-              "destination3.webp?v=9";
+              "destination3-guide.webp?v=11";
           }
 
           if (stage >= 3) {
@@ -224,6 +235,7 @@
 
         const hideArrow = function () {
           navigationGuide.classList.remove("visible");
+          navigationGuide.classList.remove("left-route");
           clearTimeout(arrowTimer);
         };
 
@@ -237,9 +249,11 @@
 
           straightArrow.classList.remove("active");
           rightArrow.classList.remove("active");
+          navigationGuide.classList.remove("left-route");
 
           if (direction === "straight") {
             straightArrow.classList.add("active");
+            navigationGuide.classList.add("left-route");
           }
 
           if (direction === "right") {
@@ -249,22 +263,27 @@
           navigationGuide.classList.add("visible");
 
           /*
-            Keep the arrow visible for 30 seconds.
-            It will remain visible even after the camera
-            stops recognizing the destination.
+            Keep the arrow and distance visible
+            for 30 seconds.
           */
           arrowTimer = setTimeout(function () {
             hideArrow();
           }, 30000);
         };
 
-      const showRecognizedMessage = function () {
-  recognitionMessage.classList.add("visible");
+        const showRecognizedMessage = function () {
+          clearTimeout(recognitionMessageTimer);
 
-  setTimeout(function () {
-    recognitionMessage.classList.remove("visible");
-  }, 30000);
-};
+          recognitionMessage.classList.add("visible");
+
+          /*
+            Keep the recognition message visible
+            for 30 seconds.
+          */
+          recognitionMessageTimer = setTimeout(function () {
+            recognitionMessage.classList.remove("visible");
+          }, 30000);
+        };
 
         const completeCheckpoint = function (targetIndex) {
           pendingTarget = null;
@@ -282,7 +301,7 @@
 
             showArrow(
               "straight",
-              "120m先"
+              "400m先"
             );
 
             return;
@@ -336,12 +355,12 @@
           pendingTarget = targetIndex;
 
           /*
-            Reduced from 800ms to 350ms
-            to improve responsiveness on Android.
+            Short confirmation time for faster
+            Android recognition.
           */
           recognitionTimer = setTimeout(function () {
             completeCheckpoint(targetIndex);
-          }, 350);
+          }, 250);
         };
 
         const targetLost = function (targetIndex) {
@@ -351,8 +370,8 @@
           }
 
           /*
-            Do not hide the arrow here.
-            Once shown, it remains for 30 seconds.
+            Do not hide the arrow or message here.
+            They remain visible for 30 seconds.
           */
         };
 
@@ -392,7 +411,7 @@
 
     <img
       id="destination-image"
-      src="destination1.webp?v=9"
+      src="destination1.webp?v=11"
       alt="次の目的地"
     >
 
@@ -455,12 +474,12 @@
 
       </defs>
 
-      <!-- Diagonal arrow pointing farther to the left -->
+      <!-- Forward arrow, angled slightly left -->
       <g
         id="straight-arrow"
         class="arrow-shape active"
         filter="url(#deep-shadow)"
-        transform="rotate(-35 140 150)"
+        transform="rotate(-12 140 150)"
       >
 
         <!-- Thick underside -->
@@ -626,7 +645,7 @@
 
   <a-scene
     route-controller
-    mindar-image="imageTargetSrc: hino-route.mind?v=9; maxTrack: 1; warmupTolerance: 2; missTolerance: 10;"
+    mindar-image="imageTargetSrc: hino-route.mind?v=11; maxTrack: 1; warmupTolerance: 1; missTolerance: 15; filterMinCF: 0.0001; filterBeta: 10;"
     color-space="sRGB"
     renderer="colorManagement: true;"
     vr-mode-ui="enabled: false"
