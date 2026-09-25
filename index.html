@@ -2,22 +2,26 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-
   <meta
     name="viewport"
-    content="width=device-width, initial-scale=1.0"
+    content="width=device-width, initial-scale=1, viewport-fit=cover"
   >
 
   <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
 
   <style>
+    * {
+      box-sizing: border-box;
+    }
+
     body {
       margin: 0;
       overflow: hidden;
       font-family: sans-serif;
     }
 
+    /* Destination photograph in upper-right corner */
     #destination-panel {
       position: fixed;
       top: max(15px, env(safe-area-inset-top));
@@ -38,6 +42,7 @@
       margin-bottom: 5px;
       font-size: clamp(12px, 3.2vw, 15px);
       font-weight: bold;
+      line-height: 1.35;
     }
 
     #destination-image {
@@ -48,23 +53,19 @@
       border-radius: 5px;
     }
 
+    /* Arrow and distance */
     #navigation-guide {
       position: fixed;
       left: 50%;
-      bottom: max(
-        7vh,
-        calc(env(safe-area-inset-bottom) + 20px)
-      );
-      transform: translateX(-50%);
+      bottom: max(7vh, calc(env(safe-area-inset-bottom) + 20px));
       z-index: 9999;
       display: flex;
       flex-direction: column;
       align-items: center;
+      transform: translateX(-50%);
       opacity: 0;
       visibility: hidden;
-      transition:
-        opacity 0.25s ease,
-        left 0.25s ease;
+      transition: opacity 0.25s ease;
       pointer-events: none;
     }
 
@@ -73,10 +74,7 @@
       visibility: visible;
     }
 
-    /*
-      After destination1, place the arrow on the street
-      to the left of the post box.
-    */
+    /* Position the first arrow over the street */
     #navigation-guide.left-route {
       left: 27%;
     }
@@ -85,12 +83,11 @@
       margin-bottom: 4px;
       padding: 8px 20px;
       color: white;
-      background:
-        linear-gradient(
-          180deg,
-          rgba(50, 50, 50, 0.95),
-          rgba(0, 0, 0, 0.88)
-        );
+      background: linear-gradient(
+        180deg,
+        rgba(50, 50, 50, 0.95),
+        rgba(0, 0, 0, 0.88)
+      );
       border: 2px solid white;
       border-radius: 22px;
       font-size: clamp(18px, 5vw, 24px);
@@ -113,19 +110,20 @@
       display: block;
     }
 
+    /* Recognition message */
     #recognition-message {
       position: fixed;
       left: 50%;
       top: 45%;
-      transform: translate(-50%, -50%);
       z-index: 10000;
       padding: 12px 22px;
-      border-radius: 24px;
       color: white;
       background: rgba(0, 0, 0, 0.82);
+      border-radius: 24px;
       font-size: clamp(17px, 4.5vw, 22px);
       font-weight: bold;
       white-space: nowrap;
+      transform: translate(-50%, -50%);
       opacity: 0;
       visibility: hidden;
       transition: opacity 0.2s ease;
@@ -137,6 +135,7 @@
       visibility: visible;
     }
 
+    /* Final destination screen */
     #final-screen {
       position: fixed;
       inset: 0;
@@ -159,8 +158,10 @@
 
   <script>
     /*
-      Add the final destination URL between the quotation marks
-      when it becomes available.
+      Enter the final webpage URL here when it is available.
+
+      Example:
+      const FINAL_URL = "https://example.com/";
     */
     const FINAL_URL = "";
 
@@ -190,9 +191,18 @@
         const finalScreen =
           document.querySelector("#final-screen");
 
+        const targets = [
+          document.querySelector("#target-1"),
+          document.querySelector("#target-2"),
+          document.querySelector("#target-3")
+        ];
+
         const urlParameters =
           new URLSearchParams(window.location.search);
 
+        /*
+          Adding ?reset=1 to the URL resets progress.
+        */
         if (urlParameters.get("reset") === "1") {
           localStorage.removeItem("hinoRouteStage");
         }
@@ -201,31 +211,39 @@
           localStorage.getItem("hinoRouteStage") || "0"
         );
 
-        let recognitionTimer = null;
+        if (stage < 0 || stage > 3 || Number.isNaN(stage)) {
+          stage = 0;
+          localStorage.setItem("hinoRouteStage", "0");
+        }
+
+        let confirmationTimer = null;
         let recognitionMessageTimer = null;
         let arrowTimer = null;
         let pendingTarget = null;
 
-        const targets = [
-          document.querySelector("#target-1"),
-          document.querySelector("#target-2"),
-          document.querySelector("#target-3")
-        ];
-
+        /*
+          Change the corner photograph according to progress.
+        */
         const updateDestinationImage = function () {
           if (stage === 0) {
             destinationImage.src =
-              "destination1.webp?v=11";
+              "destination1.webp?v=12";
+
+            destinationPanel.style.display = "block";
           }
 
           if (stage === 1) {
             destinationImage.src =
-              "destination2.webp?v=11";
+              "destination2-guide.webp?v=12";
+
+            destinationPanel.style.display = "block";
           }
 
           if (stage === 2) {
             destinationImage.src =
-              "destination3-guide.webp?v=11";
+              "destination3-guide.webp?v=12";
+
+            destinationPanel.style.display = "block";
           }
 
           if (stage >= 3) {
@@ -236,13 +254,14 @@
         const hideArrow = function () {
           navigationGuide.classList.remove("visible");
           navigationGuide.classList.remove("left-route");
+
           clearTimeout(arrowTimer);
         };
 
-        const showArrow = function (
-          direction,
-          text
-        ) {
+        /*
+          Display an arrow for 30 seconds.
+        */
+        const showArrow = function (direction, text) {
           clearTimeout(arrowTimer);
 
           distanceText.textContent = text;
@@ -253,6 +272,11 @@
 
           if (direction === "straight") {
             straightArrow.classList.add("active");
+
+            /*
+              Place the arrow over the street to the left
+              of the post box.
+            */
             navigationGuide.classList.add("left-route");
           }
 
@@ -262,33 +286,31 @@
 
           navigationGuide.classList.add("visible");
 
-          /*
-            Keep the arrow and distance visible
-            for 30 seconds.
-          */
           arrowTimer = setTimeout(function () {
             hideArrow();
           }, 30000);
         };
 
-        const showRecognizedMessage = function () {
+        /*
+          Display the separate recognition message
+          for 30 seconds.
+        */
+        const showRecognitionMessage = function () {
           clearTimeout(recognitionMessageTimer);
 
           recognitionMessage.classList.add("visible");
 
-          /*
-            Keep the recognition message visible
-            for 30 seconds.
-          */
           recognitionMessageTimer = setTimeout(function () {
             recognitionMessage.classList.remove("visible");
           }, 30000);
         };
 
-        const completeCheckpoint = function (targetIndex) {
+        const finishCheckpoint = function (targetIndex) {
           pendingTarget = null;
-          showRecognizedMessage();
 
+          /*
+            Destination 1 recognized.
+          */
           if (targetIndex === 0 && stage === 0) {
             stage = 1;
 
@@ -298,6 +320,7 @@
             );
 
             updateDestinationImage();
+            showRecognitionMessage();
 
             showArrow(
               "straight",
@@ -307,6 +330,9 @@
             return;
           }
 
+          /*
+            Destination 2 recognized.
+          */
           if (targetIndex === 1 && stage === 1) {
             stage = 2;
 
@@ -316,6 +342,7 @@
             );
 
             updateDestinationImage();
+            showRecognitionMessage();
 
             showArrow(
               "right",
@@ -325,6 +352,9 @@
             return;
           }
 
+          /*
+            Destination 3 recognized.
+          */
           if (targetIndex === 2 && stage === 2) {
             stage = 3;
 
@@ -335,6 +365,7 @@
 
             hideArrow();
             updateDestinationImage();
+            showRecognitionMessage();
 
             setTimeout(function () {
               if (FINAL_URL) {
@@ -347,32 +378,32 @@
         };
 
         const targetFound = function (targetIndex) {
+          /*
+            Only recognize the destination that currently
+            corresponds to the participant's progress.
+          */
           if (targetIndex !== stage) {
             return;
           }
 
-          clearTimeout(recognitionTimer);
+          clearTimeout(confirmationTimer);
+
           pendingTarget = targetIndex;
 
           /*
-            Short confirmation time for faster
-            Android recognition.
+            Short confirmation period to help Android phones
+            recognize the scene more easily.
           */
-          recognitionTimer = setTimeout(function () {
-            completeCheckpoint(targetIndex);
+          confirmationTimer = setTimeout(function () {
+            finishCheckpoint(targetIndex);
           }, 250);
         };
 
         const targetLost = function (targetIndex) {
           if (pendingTarget === targetIndex) {
-            clearTimeout(recognitionTimer);
+            clearTimeout(confirmationTimer);
             pendingTarget = null;
           }
-
-          /*
-            Do not hide the arrow or message here.
-            They remain visible for 30 seconds.
-          */
         };
 
         targets.forEach(function (target, targetIndex) {
@@ -393,8 +424,12 @@
 
         updateDestinationImage();
 
-        if (stage >= 3 && !FINAL_URL) {
-          finalScreen.classList.add("visible");
+        if (stage >= 3) {
+          if (FINAL_URL) {
+            window.location.assign(FINAL_URL);
+          } else {
+            finalScreen.classList.add("visible");
+          }
         }
       }
     });
@@ -403,6 +438,7 @@
 
 <body>
 
+  <!-- Destination guide in the upper-right corner -->
   <div id="destination-panel">
 
     <div id="destination-label">
@@ -411,12 +447,13 @@
 
     <img
       id="destination-image"
-      src="destination1.webp?v=11"
+      src="destination1.webp?v=12"
       alt="次の目的地"
     >
 
   </div>
 
+  <!-- Navigation arrow -->
   <div id="navigation-guide">
 
     <div id="distance-text"></div>
@@ -482,7 +519,7 @@
         transform="rotate(-12 140 150)"
       >
 
-        <!-- Thick underside -->
+        <!-- Dark underside -->
         <path
           d="
             M140 10
@@ -543,7 +580,7 @@
         filter="url(#deep-shadow)"
       >
 
-        <!-- Thick underside -->
+        <!-- Dark underside -->
         <path
           d="
             M55 276
@@ -573,7 +610,7 @@
           stroke-linejoin="round"
         />
 
-        <!-- Light border -->
+        <!-- Light outline -->
         <path
           d="
             M55 276
@@ -603,7 +640,7 @@
           stroke-linejoin="round"
         />
 
-        <!-- Arrow head -->
+        <!-- Arrowhead -->
         <path
           d="
             M183 15
@@ -645,7 +682,7 @@
 
   <a-scene
     route-controller
-    mindar-image="imageTargetSrc: hino-route.mind?v=11; maxTrack: 1; warmupTolerance: 1; missTolerance: 15; filterMinCF: 0.0001; filterBeta: 10;"
+    mindar-image="imageTargetSrc: hino-route.mind?v=12; maxTrack: 1; warmupTolerance: 1; missTolerance: 15; filterMinCF: 0.0001; filterBeta: 10;"
     color-space="sRGB"
     renderer="colorManagement: true;"
     vr-mode-ui="enabled: false"
