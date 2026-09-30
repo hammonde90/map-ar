@@ -151,13 +151,8 @@
   </style>
 
   <script>
-    /*
-      Add the final webpage URL here when available.
-
-      Example:
-      const FINAL_URL = "https://example.com/";
-    */
-    const FINAL_URL = "";
+    const TEMPORARY_URL =
+      "https://fp-michinoekishiga.com/";
 
     AFRAME.registerComponent("route-controller", {
       init: function () {
@@ -188,17 +183,41 @@
         const targets = [
           document.querySelector("#target-1"),
           document.querySelector("#target-2"),
-          document.querySelector("#target-3")
+          document.querySelector("#target-3"),
+          document.querySelector("#target-4"),
+          document.querySelector("#target-5")
         ];
 
         const urlParameters =
           new URLSearchParams(window.location.search);
 
         /*
-          Reset progress when ?reset=1 is included.
+          Reset the entire route:
+          ?reset=1
         */
         if (urlParameters.get("reset") === "1") {
           localStorage.removeItem("hinoRouteStage");
+        }
+
+        /*
+          Testing shortcut:
+
+          ?stage=3 tests the manhole.
+          ?stage=4 tests ushi.
+        */
+        if (urlParameters.has("stage")) {
+          const testStage =
+            Number(urlParameters.get("stage"));
+
+          if (
+            testStage >= 0 &&
+            testStage <= 5
+          ) {
+            localStorage.setItem(
+              "hinoRouteStage",
+              String(testStage)
+            );
+          }
         }
 
         let stage = Number(
@@ -208,10 +227,14 @@
         if (
           Number.isNaN(stage) ||
           stage < 0 ||
-          stage > 3
+          stage > 5
         ) {
           stage = 0;
-          localStorage.setItem("hinoRouteStage", "0");
+
+          localStorage.setItem(
+            "hinoRouteStage",
+            "0"
+          );
         }
 
         let arrowTimer = null;
@@ -220,25 +243,29 @@
         const updateDestinationImage = function () {
           if (stage === 0) {
             destinationImage.src =
-              "destination1.webp?v=13";
+              "destination1.webp?v=14";
 
             destinationPanel.style.display = "block";
           }
 
           if (stage === 1) {
             destinationImage.src =
-              "destination2-guide.webp?v=13";
+              "destination2-guide.webp?v=14";
 
             destinationPanel.style.display = "block";
           }
 
           if (stage === 2) {
             destinationImage.src =
-              "destination3-guide.webp?v=13";
+              "destination3-guide.webp?v=14";
 
             destinationPanel.style.display = "block";
           }
 
+          /*
+            No corner guide image is currently assigned
+            to the manhole or ushi stages.
+          */
           if (stage >= 3) {
             destinationPanel.style.display = "none";
           }
@@ -251,7 +278,10 @@
           clearTimeout(arrowTimer);
         };
 
-        const showArrow = function (direction, text) {
+        const showArrow = function (
+          direction,
+          text
+        ) {
           clearTimeout(arrowTimer);
 
           distanceText.textContent = text;
@@ -271,9 +301,6 @@
 
           navigationGuide.classList.add("visible");
 
-          /*
-            Keep the arrow visible for 30 seconds.
-          */
           arrowTimer = setTimeout(function () {
             hideArrow();
           }, 30000);
@@ -284,19 +311,27 @@
 
           recognitionMessage.classList.add("visible");
 
-          /*
-            Keep the message visible for 30 seconds.
-          */
           messageTimer = setTimeout(function () {
             recognitionMessage.classList.remove("visible");
           }, 30000);
         };
 
-        const completeCheckpoint = function (targetIndex) {
+        const openTemporaryPage = function () {
+          setTimeout(function () {
+            window.location.assign(TEMPORARY_URL);
+          }, 700);
+        };
+
+        const completeCheckpoint = function (
+          targetIndex
+        ) {
           /*
             Destination 1
           */
-          if (targetIndex === 0 && stage === 0) {
+          if (
+            targetIndex === 0 &&
+            stage === 0
+          ) {
             stage = 1;
 
             localStorage.setItem(
@@ -318,7 +353,10 @@
           /*
             Destination 2
           */
-          if (targetIndex === 1 && stage === 1) {
+          if (
+            targetIndex === 1 &&
+            stage === 1
+          ) {
             stage = 2;
 
             localStorage.setItem(
@@ -339,8 +377,14 @@
 
           /*
             Destination 3
+
+            Progress is saved, but the camera page
+            remains available for the later targets.
           */
-          if (targetIndex === 2 && stage === 2) {
+          if (
+            targetIndex === 2 &&
+            stage === 2
+          ) {
             stage = 3;
 
             localStorage.setItem(
@@ -352,24 +396,55 @@
             updateDestinationImage();
             showRecognizedMessage();
 
-            setTimeout(function () {
-              if (FINAL_URL) {
-                window.location.assign(FINAL_URL);
-              } else {
-                finalScreen.classList.add("visible");
-              }
-            }, 1000);
+            return;
+          }
+
+          /*
+            Manhole
+          */
+          if (
+            targetIndex === 3 &&
+            stage === 3
+          ) {
+            stage = 4;
+
+            localStorage.setItem(
+              "hinoRouteStage",
+              "4"
+            );
+
+            showRecognizedMessage();
+            openTemporaryPage();
+
+            return;
+          }
+
+          /*
+            Ushi
+          */
+          if (
+            targetIndex === 4 &&
+            stage === 4
+          ) {
+            stage = 5;
+
+            localStorage.setItem(
+              "hinoRouteStage",
+              "5"
+            );
+
+            showRecognizedMessage();
+            openTemporaryPage();
           }
         };
 
         /*
-          Accept the first valid MindAR detection immediately.
-
-          The previous 250-millisecond confirmation delay
-          caused some Android phones to lose the target before
-          the checkpoint could be completed.
+          Accept the first valid detection immediately.
+          This is intended to improve Android response.
         */
-        const targetFound = function (targetIndex) {
+        const targetFound = function (
+          targetIndex
+        ) {
           if (targetIndex !== stage) {
             return;
           }
@@ -377,7 +452,10 @@
           completeCheckpoint(targetIndex);
         };
 
-        targets.forEach(function (target, targetIndex) {
+        targets.forEach(function (
+          target,
+          targetIndex
+        ) {
           target.addEventListener(
             "targetFound",
             function () {
@@ -388,12 +466,8 @@
 
         updateDestinationImage();
 
-        if (stage >= 3) {
-          if (FINAL_URL) {
-            window.location.assign(FINAL_URL);
-          } else {
-            finalScreen.classList.add("visible");
-          }
+        if (stage >= 5) {
+          finalScreen.classList.add("visible");
         }
       }
     });
@@ -410,7 +484,7 @@
 
     <img
       id="destination-image"
-      src="destination1.webp?v=13"
+      src="destination1.webp?v=14"
       alt="次の目的地"
     >
 
@@ -473,7 +547,7 @@
 
       </defs>
 
-      <!-- Forward arrow, angled slightly left -->
+      <!-- Straight arrow -->
       <g
         id="straight-arrow"
         class="arrow-shape active"
@@ -631,12 +705,12 @@
   </div>
 
   <div id="final-screen">
-    最後の目的地に到着しました
+    すべての地点を見つけました
   </div>
 
   <a-scene
     route-controller
-    mindar-image="imageTargetSrc: hino-route.mind?v=13; maxTrack: 1; warmupTolerance: 1; missTolerance: 15; filterMinCF: 0.0001; filterBeta: 10;"
+    mindar-image="imageTargetSrc: hino-route.mind?v=14; maxTrack: 1; warmupTolerance: 1; missTolerance: 15; filterMinCF: 0.0001; filterBeta: 10;"
     color-space="sRGB"
     renderer="colorManagement: true;"
     vr-mode-ui="enabled: false"
@@ -656,6 +730,16 @@
     <a-entity
       id="target-3"
       mindar-image-target="targetIndex: 2"
+    ></a-entity>
+
+    <a-entity
+      id="target-4"
+      mindar-image-target="targetIndex: 3"
+    ></a-entity>
+
+    <a-entity
+      id="target-5"
+      mindar-image-target="targetIndex: 4"
     ></a-entity>
 
     <a-camera
